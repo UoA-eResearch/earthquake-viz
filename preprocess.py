@@ -37,9 +37,6 @@ def readBinary(fname):
 	# we will use lat, lon, elevation to be consistent with DEM
 	nbytes = 4 # data is recorded as floats
 	with open(fname, "rb") as f:
-		print(fname)
-		sys.stdout.flush()
-		
 		byte = f.read(nbytes)
 		while len(byte) > 0:
 			# binary data is big-endian
@@ -60,7 +57,10 @@ def interpolate(slices, dem_lat, dem_lon):
 	disps = [] # list of output displacement matrices
 	n_lat = len(dem_lat)
 	n_lon = len(dem_lon)	
+
+
 	for slice in slices:
+		s = time.time()
 		# the slice data is our function of (lat, lon)
 		# define the lat and lon vectors and ndarrays
 		lat, lon, elev = zip(*slice)
@@ -69,7 +69,7 @@ def interpolate(slices, dem_lat, dem_lon):
 		elev = np.array(elev, dtype=np.float)	
 
 		# k-nearest neighbour
-		k = 10 	# number of neighbours
+		k = 9 	# number of neighbours
 		r = 1	# max distance of neighbour
 		a = np.column_stack((lat, lon)) # format input array for tree
 		tree = scipy.spatial.cKDTree(a.copy()) # intit tree with copy of data
@@ -95,6 +95,10 @@ def interpolate(slices, dem_lat, dem_lon):
 					
 		disp = np.flipud(disp)
 		disps.append(disp)
+
+		e = time.time()
+		print("    %.2f s" % (e - s))
+		sys.stdout.flush()
 
 	return disps
 
@@ -157,28 +161,26 @@ elev = elev.reshape((n_lat, n_lon))
 # read distrubance data 
 # TODO replace with list of time slices
 
-files = []
-for file in glob.glob(input_dir + "/*"):
-	files.append(os.path.abspath(file))
+files = glob.glob(input_dir + "/*")
+#for file in glob.glob(input_dir + "/*"):
+#	files.append(os.path.abspath(file))
 
 slices = []
-print("Reading displacement data..."),
-s = time.time()
-#for file in files:
-for file in [files[100]]:
-	#print(file)
+print("Reading displacement files ...")
+for file in files:
+	print("    "+os.path.basename(file))
 	slices.append(readBinary(file))
-e = time.time()
-print("done %.2f s" % (e - s))
 
 # Map displacement data to DEM grid
-print("Interpolating data...")
+print("Interpolating data ...")
 sys.stdout.flush()
 
 s = time.time()
 disps = interpolate(slices, o_lat, o_lon)
 e = time.time()
-print("done %.2f s" % (e - s))
+total_time = e - s;
+avg_time = total_time/len(disps)
+print("Interpolation time: total: %.2f s, avg: %.2f s" % (total_time, avg_time ))
 sys.stdout.flush()
 
 # Write out base map:
