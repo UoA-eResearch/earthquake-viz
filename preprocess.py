@@ -13,22 +13,8 @@ from struct import *
 import glob
 import png
 from scipy.spatial import cKDTree
-
-def toPNG(disp, filename):
-	# filter first
-	#disp = sp.ndimage.filters.gaussian_filter(disp, sigma=2)	
-	max = np.amax(disp)
-	min = np.amin(disp)
-	r = max - min
-	disp = ((disp - min) / r ) * (2**16-1)
-	disp = disp.astype(int)
-	disp = np.flipud(disp)
-	width = disp.shape[1]
-	height = disp.shape[0]
-	disp = disp.flatten('C')
-	writer = png.Writer(width=width, height=height, bitdepth=16, greyscale=True )
-	writer.write_array(open(filename, "wb"), disp)
-
+import multiprocessing
+from joblib import Parallel, delayed
 
 # read binary displacement data
 def readBinary(fname):
@@ -49,65 +35,62 @@ def readBinary(fname):
 			byte = f.read(nbytes)
 	return coords
 		
-def interpolate(slices, dem_lat, dem_lon):
-	# slices is array of sim results at each timestep
-	# each slice has (lat, lon, elevation)
+def interpolate(fname, dem_lat, dem_lon):
+	
+	slice = readBinary(fname)
+	
+	# slice is sim results at each timestep
+	# each slice has array of (lat, lon, elevation)
 	# we want the simulation elevation at the dem lat, lon coords
 
-	disps = [] # list of output displacement matrices
+	# size of data dimensions
 	n_lat = len(dem_lat)
 	n_lon = len(dem_lon)	
 
+	# record time taken to interpolate
+	s = time.time()
 
-	for slice in slices:
-		s = time.time()
-		# the slice data is our function of (lat, lon)
-		# define the lat and lon vectors and ndarrays
-		lat, lon, elev = zip(*slice)
-		lat = np.array(lat, dtype=np.float)
-		lon = np.array(lon, dtype=np.float)
-		elev = np.array(elev, dtype=np.float)	
+	# the slice data is our function of (lat, lon)
+	# define the lat and lon vectors and ndarrays
+	lat, lon, elev = zip(*slice)
+	lat = np.array(lat, dtype=np.float)
+	lon = np.array(lon, dtype=np.float)
+	elev = np.array(elev, dtype=np.float)	
 
-		# k-nearest neighbour
-		k = 9 	# number of neighbours
-		r = 1	# max distance of neighbour
-		a = np.column_stack((lat, lon)) # format input array for tree
-		tree = scipy.spatial.cKDTree(a.copy()) # intit tree with copy of data
-		disp = np.zeros((n_lat, n_lon)) # init output displacement matrix
+	# search for nearby points using k-nearest neighbour
+	k = 9 	# number of neighbours
+	r = 1	# max distance of neighbourhood
+	a = np.column_stack((lat, lon)) # format input array for tree
+	tree = scipy.spatial.cKDTree(a.copy()) # init tree with copy of data
+	disp = np.zeros((n_lat, n_lon)) # init output displacement matrix
 
-		# find nearest neighbours for each dem lat lon
-		for i in range(n_lat)[:]:
-			for j in range(n_lon)[:]:
-				#print dem_lat[i], dem_lon[j]
-				q = np.array([dem_lat[i], dem_lon[j]]) # query point
-				d, idx = tree.query(q, k=k, eps=0, p=2, distance_upper_bound=r) # query returns neighbour distances and indices
-				disp[i][j] = 0
-				#print d, idx
-				wm = 0 # weighted mean
-				count = 0
-				# determine mean of weigthed contributions from neighbours
-				for w in range(len(idx)):
-					if (np.isfinite(d[w])):
-						count = count + 1
-						wm += ( (r-d[w])/r ) * slice[idx[w]][2]
-				if count > 0:
-					disp[i][j] = wm/count
-					
-		disp = np.flipud(disp)
-		disps.append(disp)
+	# find nearest neighbours for each DEM lat lon
+	for i in range(n_lat)[:]:
+		for j in range(n_lon)[:]:
+			#print dem_lat[i], dem_lon[j]
+			q = np.array([dem_lat[i], dem_lon[j]]) # query point
+			n_d, n_idx = tree.query(q, k=k, eps=0, p=2, distance_upper_bound=r) # query returns neighbour distances and indices
+			disp[i][j] = 0
+			#print d, idx
+			wm = 0 # weighted mean
+			count = 0
+			# determine mean of weigthed contributions from neighbours
+			for ni in range(len(n_idx)):
+				if (np.isfinite(n_d[ni])):
+					count = count + 1
+					w = (r - n_d[ni]) / r
+					wm += w * elev[n_idx[ni]] # weighted distace x elevation at neighbour
+			if count > 0:
+				disp[i][j] = wm/count # average of weighted contributions
+				
+	disp = np.flipud(disp)
 
-		e = time.time()
-		print("    %.2f s" % (e - s))
-		sys.stdout.flush()
+	e = time.time()
+	print(os.path.basename(fname)+"    %.2f s" % (e - s))
+	sys.stdout.flush()
 
-	return disps
-
-def normalise(d):
-	max = np.amax(d)
-	min = np.amin(d)
-	_range = max - min
-	d = (d - min) / _range
-	return d
+	fname = "%s/disp_%d.csv" % (output_dir, files.index(fname))
+	np.savetxt(fname, disp, delimiter=",")
 
 def scale(d, n):
 	return d * n
@@ -136,7 +119,6 @@ with open(in_file, "r") as file:
 	# read longitude values
 	o_lon = [float(x) for x in lines[2].split()]
 	# read lat, long grid
-	o_elev = []
 	# Bottom row in image is top row in data
 	for i in range(0, n_lat):
 		# flat row format
@@ -145,50 +127,23 @@ with open(in_file, "r") as file:
 e = time.time()
 print("done %.2f s" % (e - s))
 
-# normalise data
-lat = normalise(np.array(o_lat))
-lon = normalise(np.array(o_lon))
-elev = normalise(np.array(o_elev))
-
-# scale data
-#lat = scale(lat, 1)
-#lon = scale(lon, 1)
-#elev = scale(elev, 0.1) # reduce exaggeration on DEM surface
-
 # reshape data
-elev = elev.reshape((n_lat, n_lon))
+o_elev = np.array(o_elev)
+elev = o_elev.reshape((n_lat, n_lon))
+# Write out base map:
+np.savetxt("dem.csv", elev, delimiter=",")
 
-# read distrubance data 
-# TODO replace with list of time slices
-
+# read displacement data 
 files = glob.glob(input_dir + "/*")
-#for file in glob.glob(input_dir + "/*"):
-#	files.append(os.path.abspath(file))
+files.sort()
 
-slices = []
-print("Reading displacement files ...")
-for file in files:
-	print("    "+os.path.basename(file))
-	slices.append(readBinary(file))
+if (len(files) == 0):
+	print("No input files found");
+	sys.exit(1)
 
 # Map displacement data to DEM grid
 print("Interpolating data ...")
 sys.stdout.flush()
 
-s = time.time()
-disps = interpolate(slices, o_lat, o_lon)
-e = time.time()
-total_time = e - s;
-avg_time = total_time/len(disps)
-print("Interpolation time: total: %.2f s, avg: %.2f s" % (total_time, avg_time ))
-sys.stdout.flush()
-
-# Write out base map:
-np.savetxt("dem.csv", elev, delimiter=",")
-
-# Write out slices
-for i in range(0, len(disps)):
-	d = disps[i]
-	fname = "%s/disp_%d.csv" % (output_dir, i)
-	np.savetxt(fname, d, delimiter=",")
-
+num_cores = multiprocessing.cpu_count()
+Parallel(n_jobs=num_cores)(delayed(interpolate)(f, o_lat, o_lon) for f in files)
