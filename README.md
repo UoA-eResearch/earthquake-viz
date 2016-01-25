@@ -1,11 +1,11 @@
 # earthquake-viz
 
 ## Dependencies
-* Blender 2.76b, , Python 3
+* Blender 2.76b, , 
 * glob2: https://pypi.python.org/pypi/glob2
 * joblib: https://pypi.python.org/pypi/joblib
-* numpy & scipi: http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy (get from here on windows)
-* Visual C++: http://www.microsoft.com/en-us/download/details.aspx?id=48145 (windows)
+* Python 3, numpy & scipi: anaconda
+* pypng
 
 Run preprocess to convert simulation output files to interpolated surface deformations on a given DEM grid, e.g.:
 
