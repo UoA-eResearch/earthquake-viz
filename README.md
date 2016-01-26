@@ -4,7 +4,9 @@
 * Blender 2.76b, , 
 * glob2: https://pypi.python.org/pypi/glob2
 * joblib: https://pypi.python.org/pypi/joblib
-* Python 3, numpy & scipi: anaconda (need to change to same Python version as Blender - with conda command): conda install python=3.4.2
+* Python 3, numpy & scipi: anaconda (need to change to same Python version as Blender - with conda command): 
+* conda install python=3.4.2=0 (need exact build number) 
+
 * pypng
 
 Run preprocess to convert simulation output files to interpolated surface deformations on a given DEM grid, e.g.:
