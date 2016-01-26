@@ -52,7 +52,6 @@ for item in bpy.data.meshes:
     bpy.data.meshes.remove(item)
 
 # Read basemap
-# dir = "/Users/smas036/seismic/Brendon"
 basemap = np.loadtxt(csv_path, delimiter=",")
 
 # Read in data
