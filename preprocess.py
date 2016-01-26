@@ -35,7 +35,7 @@ def readBinary(fname):
 			byte = f.read(nbytes)
 	return coords
 		
-def interpolate(fname, dem_lat, dem_lon):
+def interpolate(fname, dem_lat, dem_lon, output_dir, files):
 	
 	slice = readBinary(fname)
 	
@@ -95,55 +95,56 @@ def interpolate(fname, dem_lat, dem_lon):
 def scale(d, n):
 	return d * n
 
-# input and output files
-in_file = sys.argv[1]
-input_dir = os.path.abspath(sys.argv[2])
-output_dir = os.path.abspath(sys.argv[3])
+if __name__ == '__main__':
+	# input and output files
+	in_file = sys.argv[1]
+	input_dir = os.path.abspath(sys.argv[2])
+	output_dir = os.path.abspath(sys.argv[3])
 
-print("Reading DEM basemap..."),
-s = time.time()
+	print("Reading DEM basemap..."),
+	s = time.time()
 
-# Open and read .in file
-o_lat = []
-o_lon = []
-o_elev = []
-with open(in_file, "r") as file:
-	# read lines
-	lines = file.readlines()
-	# determine number of latitude and longitude points
-	n_lat, n_lon = lines[0].split()
-	n_lat = int(n_lat)
-	n_lon = int(n_lon)
-	# read latitude values
-	o_lat = [float(x) for x in lines[1].split()]
-	# read longitude values
-	o_lon = [float(x) for x in lines[2].split()]
-	# read lat, long grid
-	# Bottom row in image is top row in data
-	for i in range(0, n_lat):
-		# flat row format
-		o_elev = [float(x) for x in lines[3+i].split()] + o_elev
+	# Open and read .in file
+	o_lat = []
+	o_lon = []
+	o_elev = []
+	with open(in_file, "r") as file:
+		# read lines
+		lines = file.readlines()
+		# determine number of latitude and longitude points
+		n_lat, n_lon = lines[0].split()
+		n_lat = int(n_lat)
+		n_lon = int(n_lon)
+		# read latitude values
+		o_lat = [float(x) for x in lines[1].split()]
+		# read longitude values
+		o_lon = [float(x) for x in lines[2].split()]
+		# read lat, long grid
+		# Bottom row in image is top row in data
+		for i in range(0, n_lat):
+			# flat row format
+			o_elev = [float(x) for x in lines[3+i].split()] + o_elev
 
-e = time.time()
-print("done %.2f s" % (e - s))
+	e = time.time()
+	print("done %.2f s" % (e - s))
 
-# reshape data
-o_elev = np.array(o_elev)
-elev = o_elev.reshape((n_lat, n_lon))
-# Write out base map:
-np.savetxt("dem.csv", elev, delimiter=",")
+	# reshape data
+	o_elev = np.array(o_elev)
+	elev = o_elev.reshape((n_lat, n_lon))
+	# Write out base map:
+	np.savetxt("dem.csv", elev, delimiter=",")
 
-# read displacement data 
-files = glob.glob(input_dir + "/*")
-files.sort()
+	# read displacement data
+	files = glob.glob(input_dir + "/*")
+	files.sort()
 
-if (len(files) == 0):
-	print("No input files found");
-	sys.exit(1)
+	if (len(files) == 0):
+		print("No input files found");
+		sys.exit(1)
 
-# Map displacement data to DEM grid
-print("Interpolating data ...")
-sys.stdout.flush()
+	# Map displacement data to DEM grid
+	print("Interpolating data ...")
+	sys.stdout.flush()
 
-num_cores = multiprocessing.cpu_count()
-Parallel(n_jobs=num_cores)(delayed(interpolate)(f, o_lat, o_lon) for f in files)
+	num_cores = multiprocessing.cpu_count()
+	Parallel(n_jobs=num_cores)(delayed(interpolate)(f, o_lat, o_lon, output_dir, files) for f in files)
