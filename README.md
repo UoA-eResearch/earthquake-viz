@@ -91,9 +91,9 @@ To generate the Blender animation, run the following command:
 
 ```bash
 user@pc:~/workspace/earthquake-viz$ blender -P postprocess.py -- output dem.csv google_sat_3857_clipped.bmp
-Data directory: /home/jamie/workspace/earthquake-viz/output
-CSV file path: /home/jamie/workspace/earthquake-viz/dem.csv
-Texture file path: /home/jamie/workspace/earthquake-viz/google_sat_3857_clipped.bmp
+Data directory: /home/user/workspace/earthquake-viz/output
+CSV file path: /home/user/workspace/earthquake-viz/dem.csv
+Texture file path: /home/user/workspace/earthquake-viz/google_sat_3857_clipped.bmp
 Reading displacement data...
 done 3.14 s
 Building shape keys ...
