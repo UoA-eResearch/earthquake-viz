@@ -67,8 +67,8 @@ for file in glob.glob(data_dir + "/*"):
 files = sorted(files, key=lambda f: int(f.split('_')[1].split('.')[0]))
 
 data = []
-# for file in files:
-for file in files[0:10]:
+#for file in files[0:10]:
+for file in files:
     d = np.loadtxt(file, delimiter=",")
     data.append(d)
 e = time.time()
