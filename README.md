@@ -18,17 +18,17 @@ Insert description here
 1. Then, install numpy and scipy with the following command: `pip install numpy-1.10.4+mkl-cp34-none-win_amd64.whl Pillow-3.1.0-cp34-none-win_amd64.whl scipy-0.17.0-cp34-none-win_amd64.whl`.
 1. From a terminal clone repo into desired location (assuming you have git installed): `git clone https://github.com/UoA-eResearch/earthquake-viz.git`
 
-##  Preprocessing
+##  Preprocessing data
 
 Your project directory should look like this:
 
 ```bash
 user@pc:~/workspace/earthquake-viz$ ls
-DEMSurface_4.in              input    postprocess.py  README.md
-google_sat_3857_clipped.bmp  LICENSE  preprocess.py
+DEMSurface_4.in              input    output          preprocess.py
+google_sat_3857_clipped.bmp  LICENSE  postprocess.py  README.md
 ```
 
-In this case, the input files are in `~/workspace/earthquake-viz/input`:
+The input data should be in their own directory, for example:
 
 ```bash
 jamie@jamie-VirtualBox:~/workspace/earthquake-viz/input$ ls
@@ -67,12 +67,39 @@ Interpolating data ...
 
 Where DEM.in is the input DEMSurface_4.in (format??), input contains the files to be interpolated onto the DEM, output will contain the interpolated results.
 
+###  Expected output
+
+When preprocess.py finishes, the project directory should contain a file called `dem.csv`, for example:
+
+```bash
+user@pc:~/workspace/earthquake-viz$ ls
+*dem.csv*                    input    postprocess.py
+DEMSurface_4.in              LICENSE  preprocess.py
+google_sat_3857_clipped.bmp  output   README.md
+```
+
+And the output directory should contain a set of csv files, for example:
+
+```bash
+user@pc:~/workspace/earthquake-viz/output$ ls
+disp_0.csv  disp_1.csv  disp_2.csv  disp_3.csv  disp_4.csv
+```
+
 ##  Generating Blender animation
 
 To generate the Blender animation, run the following command:
 
 ```bash
-blender -P postprocess.py -- data_dir dem.csv texture.bmp
+user@pc:~/workspace/earthquake-viz$ blender -P postprocess.py -- output dem.csv google_sat_3857_clipped.bmp
+Data directory: /home/jamie/workspace/earthquake-viz/output
+CSV file path: /home/jamie/workspace/earthquake-viz/dem.csv
+Texture file path: /home/jamie/workspace/earthquake-viz/google_sat_3857_clipped.bmp
+Reading displacement data...
+done 3.14 s
+Building shape keys ...
+done 11.21 s
 ```
 
-Where data_dir is the output from the preprocess, dem.csv is the ? and texture.bmp is the name of the texture file.
+Where output is the output from the preprocess, dem.csv is the ? and google_sat_3857_clipped.bmp is the name of the texture file.
+
+Blender should open up when the above command is run, it will look blank at first, but when the shape keys have been generated you can view the animation.
