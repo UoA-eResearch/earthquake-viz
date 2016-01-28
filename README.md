@@ -2,6 +2,10 @@
 
 Insert description here
 
+## Ubuntu setup
+1. Intall Blender and pip for Python 3: `sudo apt-get install blender python3-pip`
+2. Use pip3 to install Python dependencies: `sudo pip3 install glob2 joblib pypng numpy scipy`
+
 ## Windows setup
 1. Download and install [Blender 2.76b 64bit](https://www.blender.org/download/).
 1. Add the Blender install directory to your PATH.
@@ -11,9 +15,6 @@ Insert description here
 1. Install the glob2, joblib and pypng dependencies with the command: `pip install glob2 joblib pypng`.
 1. To install numpy and scipy dependencies, first download the wheel files `numpy-1.10.4+mkl-cp34-none-win_amd64.whl`, `Pillow-3.1.0-cp34-none-win_amd64.whl` and `scipy-0.17.0-cp34-none-win_amd64.whl` from [here](http://www.lfd.uci.edu/~gohlke/pythonlibs/).
 1. Then, install numpy and scipy with the following command: `pip install numpy-1.10.4+mkl-cp34-none-win_amd64.whl Pillow-3.1.0-cp34-none-win_amd64.whl scipy-0.17.0-cp34-none-win_amd64.whl`.
-
-## Ubuntu setup
-1. 
 
 ##  Running
 
