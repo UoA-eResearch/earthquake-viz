@@ -87,7 +87,7 @@ disp_0.csv  disp_1.csv  disp_2.csv  disp_3.csv  disp_4.csv
 
 ##  Generating Blender animation
 
-To generate the Blender animation, run the following command:
+After you have preprocessed the data, you can generate the Blender animation. To do so, run the following command:
 
 ```bash
 user@pc:~/workspace/earthquake-viz$ blender -P postprocess.py -- output dem.csv google_sat_3857_clipped.bmp
