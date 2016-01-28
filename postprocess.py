@@ -1,13 +1,7 @@
-# run in blender
-# open consolse and exectue: 
 #
-# filename = "/Users/smas036/seismic/Brendon/postprocess.py"
-# exec(compile(open(filename).read(), filename, 'exec'))
+# Converts data from preprocess.py into a Blender animation
 #
-# or from the command line:
-#
-# blender -b -P blendtest.py
-#
+
 import bpy
 import sys
 import numpy as np
