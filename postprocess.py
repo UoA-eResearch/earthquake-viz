@@ -29,7 +29,7 @@ def scale(d, n):
     return d * n
 
 basemap_scale = 0.00005
-disp_scale = 2.0
+disp_scale = 0.2
 
 argv = sys.argv
 argv = argv[argv.index("--") + 1:]  # get all args after "--"
