@@ -73,7 +73,7 @@ When preprocess.py finishes, the project directory should contain a file called 
 
 ```bash
 user@pc:~/workspace/earthquake-viz$ ls
-*dem.csv*                    input    postprocess.py
+dem.csv                      input    postprocess.py
 DEMSurface_4.in              LICENSE  preprocess.py
 google_sat_3857_clipped.bmp  output   README.md
 ```
