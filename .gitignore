@@ -63,4 +63,12 @@ target/
 # Inputs
 input
 *.png
+*.jpg
+*.txt
 *.0
+
+# Archives
+*.zip
+
+# OS stuff
+.directory
