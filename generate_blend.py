@@ -52,7 +52,7 @@ for line in lines:
     dem[bits[0]] = {}
   if bits[2] == -9999:
     bits[2] = 0
-  dem[bits[0]][bits[1]] = bits[2]
+  dem[bits[0]][bits[1]] = bits[2] * basemap_scale
   if bits[0] < minlng:
     minlng = bits[0]
   if bits[0] > maxlng:
@@ -69,6 +69,9 @@ n_lon = len(lngs)
 latrange = range(int(minlat * 100), int(maxlat * 100))
 latrange = [x/100.0 for x in latrange]
 n_lat = len(latrange)
+
+lng_lookup = dict((v,k) for k,v in enumerate(lngs))
+lat_lookup = dict((v,k) for k,v in enumerate(latrange))
 
 smoothed_dem = np.zeros((n_lon, n_lat))
 
@@ -87,26 +90,25 @@ files.sort()
 simulation = []
 
 print('reading tslices')
+s = time.time()
+sys.stdout.flush()
 
-for f in files[200:202]:
+for f in files[200:210]:
   c = readBinary(f)
-  matrix = {}
+  matrix = np.zeros((n_lon, n_lat))
   for lng, lat, elev in c:
     lng = round(lng, 2)
     lat = round(lat, 2)
-    if lng not in matrix:
-      matrix[lng] = {}
-    matrix[lng][lat] = elev
-  filled_matrix = np.zeros((n_lon, n_lat))
-  for i,lng in enumerate(lngs):
-    for j,lat in enumerate(latrange):
-      if lng in matrix and lat in matrix[lng]:
-        filled_matrix[i][j] = matrix[lng][lat]
-  filled_matrix = gaussian_filter(filled_matrix, sigma=2)
-  filled_matrix = list(filled_matrix.flatten())
-  simulation.append(filled_matrix)
+    i = lng_lookup[lng]
+    j = lat_lookup[lat]
+    matrix[i][j] = smoothed_dem[i][j] + disp_scale * elev
+  matrix = gaussian_filter(matrix, sigma=2)
+  matrix = list(matrix.flatten())
+  simulation.append(matrix)
 
-print('done')
+e = time.time()
+print("done %.2f s" % (e - s))
+sys.stdout.flush()
 
 # Clear Blender scene
 bpy.ops.object.mode_set(mode='OBJECT')
@@ -123,7 +125,7 @@ for i,lng in enumerate(lngs):
     for j,lat in enumerate(latrange):
         normalised_x = (lng - minlng) / 10
         normalised_y = (lat - minlat) / 10
-        vert = (normalised_x, normalised_y, smoothed_dem[i][j] * basemap_scale)
+        vert = (normalised_x, normalised_y, smoothed_dem[i][j])
         verts.append(vert)
 
 # Create faces
@@ -178,14 +180,16 @@ for k,d in enumerate(simulation):
     for i in range(0, n_lon):
         for j in range(0, n_lat):
             idx = j * n_lon + i
-            bz = obj.data.shape_keys.key_blocks["Basis"].data[idx].co[2]
-            dz = disp_scale * d[idx]
-            obj.data.shape_keys.key_blocks[k].data[idx].co[2] = dz + bz
-            prev = cumulative.data.shape_keys.key_blocks[k-1].data[idx].co[2]
-            if bz + dz > prev:
-              cumulative.data.shape_keys.key_blocks[k].data[idx].co[2] = dz + bz
+            dz = d[idx]
+            obj.data.shape_keys.key_blocks[k].data[idx].co.z = dz
+            if k > 1:
+              prev = simulation[k-2][idx]
+              if dz > prev:
+                cumulative.data.shape_keys.key_blocks[k].data[idx].co.z = dz
+              else:
+                cumulative.data.shape_keys.key_blocks[k].data[idx].co.z = prev
             else:
-              cumulative.data.shape_keys.key_blocks[k].data[idx].co[2] = prev
+              cumulative.data.shape_keys.key_blocks[k].data[idx].co.z = dz
 
 e = time.time()
 print("done %.2f s" % (e - s))
