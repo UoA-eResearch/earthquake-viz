@@ -34,8 +34,9 @@ texture_path = argv[2]
 f = open(dem_file)
 lines = f.readlines()
 
-basemap_scale = 0.000005
+basemap_scale = 0.00002
 disp_scale = 0.1
+vert_skip = 3
 
 first = [float(x) for x in lines[0].split()]
 minlng = first[0]
@@ -46,10 +47,14 @@ maxlat = first[1]
 print('reading DEM')
 
 dem = {}
+lats = []
+
 for line in lines:
   bits = [float(x) for x in line.split()]
   if bits[0] not in dem:
     dem[bits[0]] = {}
+  if bits[1] not in lats:
+    lats.append(bits[1])
   if bits[2] == -9999:
     bits[2] = 0
   dem[bits[0]][bits[1]] = bits[2] * basemap_scale
@@ -64,19 +69,21 @@ for line in lines:
 
 lngs = list(dem.keys())
 lngs.sort()
-n_lon = len(lngs)
+lats.sort()
 
-latrange = range(int(minlat * 100), int(maxlat * 100))
-latrange = [x/100.0 for x in latrange]
-n_lat = len(latrange)
+lngs = lngs[::vert_skip]
+lats = lats[::vert_skip]
+
+n_lon = len(lngs)
+n_lat = len(lats)
 
 lng_lookup = dict((v,k) for k,v in enumerate(lngs))
-lat_lookup = dict((v,k) for k,v in enumerate(latrange))
+lat_lookup = dict((v,k) for k,v in enumerate(lats))
 
 smoothed_dem = np.zeros((n_lon, n_lat))
 
 for i,lng in enumerate(lngs):
-  for j,lat in enumerate(latrange):
+  for j,lat in enumerate(lats):
     if lng in dem and lat in dem[lng]:
       smoothed_dem[i][j] = dem[lng][lat]
 
@@ -99,10 +106,13 @@ for f in files[200:210]:
   for lng, lat, elev in c:
     lng = round(lng, 2)
     lat = round(lat, 2)
+    if lng not in lng_lookup or lat not in lat_lookup:
+      continue
     i = lng_lookup[lng]
     j = lat_lookup[lat]
-    matrix[i][j] = smoothed_dem[i][j] + disp_scale * elev
+    matrix[i][j] = disp_scale * elev
   matrix = gaussian_filter(matrix, sigma=2)
+  matrix += smoothed_dem
   matrix = list(matrix.flatten())
   simulation.append(matrix)
 
@@ -122,7 +132,7 @@ verts = []
 faces = []
 # Create vertices
 for i,lng in enumerate(lngs):
-    for j,lat in enumerate(latrange):
+    for j,lat in enumerate(lats):
         normalised_x = (lng - minlng) / 10
         normalised_y = (lat - minlat) / 10
         vert = (normalised_x, normalised_y, smoothed_dem[i][j])
