@@ -37,6 +37,7 @@ lines = f.readlines()
 basemap_scale = 0.00002
 disp_scale = 0.1
 vert_skip = 3
+ts_skip = 2
 
 first = [float(x) for x in lines[0].split()]
 minlng = first[0]
@@ -94,13 +95,14 @@ print("Longitude range: {} to {}. Latitude range: {} to {}. Longitude steps: {}.
 
 files = glob.glob(data_dir)
 files.sort()
+files = files[::ts_skip]
 simulation = []
 
 print('reading tslices')
 s = time.time()
 sys.stdout.flush()
 
-for f in files[200:210]:
+for f in files:
   c = readBinary(f)
   matrix = np.zeros((n_lon, n_lat))
   for lng, lat, elev in c:
