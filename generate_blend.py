@@ -23,13 +23,14 @@ def readBinary(fname):
 argv = sys.argv
 argv = argv[argv.index("--") + 1:]  # get all args after "--"
 
-if len(argv) < 3:
-  print('specify tslice, dem, texture')
+if len(argv) < 4:
+  print('specify tslice, dem, texture, display type')
   exit(1)
 
 data_dir = argv[0].strip('/') + '/*'
 dem_file = argv[1]
 texture_path = argv[2]
+display_type = argv[3]
 
 f = open(dem_file)
 lines = f.readlines()
@@ -162,12 +163,6 @@ dem_object = bpy.data.objects.new("DEM_Object", mesh_data)
 scene = bpy.context.scene
 scene.objects.link(dem_object)
 
-bpy.ops.object.select_pattern(pattern='DEM_Object')
-bpy.ops.object.duplicate()
-cumulative = bpy.data.objects['DEM_Object.001']
-cumulative.name = "Cumulative DEM_Object"
-cumulative.location = (10, 0, 0)
-
 # animation
 
 print("Building shape keys ..."),
@@ -176,32 +171,26 @@ sys.stdout.flush()
 # generate a shape key for each simulation step
 obj = dem_object
 obj.shape_key_add()
-cumulative.shape_key_add()
 
 obj.data.shape_keys.key_blocks[0].name = "Basis"
-cumulative.data.shape_keys.key_blocks[0].name = "Basis"
 
 # displacement scale
 
 for k,d in enumerate(simulation):
     obj.shape_key_add()
-    cumulative.shape_key_add()
     k += 1
     obj.data.shape_keys.key_blocks[k].name = "Key_{k}".format(k=k)
-    cumulative.data.shape_keys.key_blocks[k].name = "Key_{k}".format(k=k)
     for i in range(0, n_lon):
         for j in range(0, n_lat):
             idx = j * n_lon + i
             dz = d[idx]
             obj.data.shape_keys.key_blocks[k].data[idx].co.z = dz
-            if k > 1:
+            if display_type == 'cumulative' and k > 1:
               prev = simulation[k-2][idx]
               if dz > prev:
-                cumulative.data.shape_keys.key_blocks[k].data[idx].co.z = dz
+                obj.data.shape_keys.key_blocks[k].data[idx].co.z = dz
               else:
-                cumulative.data.shape_keys.key_blocks[k].data[idx].co.z = prev
-            else:
-              cumulative.data.shape_keys.key_blocks[k].data[idx].co.z = dz
+                obj.data.shape_keys.key_blocks[k].data[idx].co.z = prev
 
 e = time.time()
 print("done %.2f s" % (e - s))
@@ -219,13 +208,6 @@ for k in range(1, len(simulation) + 1):
     obj.data.shape_keys.key_blocks[k].keyframe_insert(data_path='value', frame=k * stepsize + stepsize)
     obj.data.shape_keys.key_blocks[k].value = 0.0
     obj.data.shape_keys.key_blocks[k].keyframe_insert(data_path='value', frame=k * stepsize + 2 * stepsize)
-    
-    cumulative.data.shape_keys.key_blocks[k].value = 0.0
-    cumulative.data.shape_keys.key_blocks[k].keyframe_insert(data_path='value', frame=k * stepsize)
-    cumulative.data.shape_keys.key_blocks[k].value = 1.0
-    cumulative.data.shape_keys.key_blocks[k].keyframe_insert(data_path='value', frame=k * stepsize + stepsize)
-    cumulative.data.shape_keys.key_blocks[k].value = 0.0
-    cumulative.data.shape_keys.key_blocks[k].keyframe_insert(data_path='value', frame=k * stepsize + 2 * stepsize)
 
 
 # Create material 
