@@ -36,7 +36,7 @@ f = open(dem_file)
 lines = f.readlines()
 
 basemap_scale = 0.00002
-disp_scale = 0.1
+disp_scale = 0.025
 vert_skip = 3
 ts_skip = 2
 
