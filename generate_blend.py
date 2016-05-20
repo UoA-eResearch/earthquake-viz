@@ -57,8 +57,6 @@ for line in lines:
     dem[bits[0]] = {}
   if bits[1] not in lats:
     lats.append(bits[1])
-  if bits[2] == -9999:
-    bits[2] = 0
   dem[bits[0]][bits[1]] = bits[2] * basemap_scale
   if bits[0] < minlng:
     minlng = bits[0]
@@ -87,7 +85,8 @@ smoothed_dem = np.zeros((n_lon, n_lat))
 for i,lng in enumerate(lngs):
   for j,lat in enumerate(lats):
     if lng in dem and lat in dem[lng]:
-      smoothed_dem[i][j] = dem[lng][lat]
+      if dem[lng][lat] > 0:
+        smoothed_dem[i][j] = dem[lng][lat]
 
 smoothed_dem = gaussian_filter(smoothed_dem, sigma=2)
 
@@ -111,6 +110,8 @@ for f in files:
     lat = round(lat, 2)
     if lng not in lng_lookup or lat not in lat_lookup:
       continue
+    if lng in dem and lat in dem[lng] and dem[lng][lat] < 0:
+      elev = 0
     i = lng_lookup[lng]
     j = lat_lookup[lat]
     matrix[i][j] = disp_scale * elev
