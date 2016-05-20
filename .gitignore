@@ -67,6 +67,9 @@ input
 *.txt
 *.0
 
+# Outputs
+*.blend
+
 # Archives
 *.zip
 
