@@ -69,6 +69,7 @@ input
 
 # Outputs
 *.blend
+*.mp4
 
 # Archives
 *.zip
