@@ -118,6 +118,8 @@ for f in files:
   matrix = gaussian_filter(matrix, sigma=2)
   matrix += smoothed_dem
   matrix = list(matrix.flatten())
+  if display_type == 'cumulative' and len(simulation) > 0:
+    matrix = np.maximum(matrix, simulation[-1])
   simulation.append(matrix)
 
 e = time.time()
@@ -179,20 +181,12 @@ obj.data.shape_keys.key_blocks[0].name = "Basis"
 
 for k,d in enumerate(simulation):
     obj.shape_key_add()
-    k += 1
-    obj.data.shape_keys.key_blocks[k].name = "Key_{k}".format(k=k)
+    obj.data.shape_keys.key_blocks[k].name = "Key_{}".format(k+1)
     for i in range(0, n_lon):
         for j in range(0, n_lat):
             idx = j * n_lon + i
             dz = d[idx]
-            if display_type == 'cumulative' and k > 1:
-              prev = simulation[k-2][idx]
-              if dz > prev:
-                obj.data.shape_keys.key_blocks[k].data[idx].co.z = dz
-              else:
-                obj.data.shape_keys.key_blocks[k].data[idx].co.z = prev
-            else:
-              obj.data.shape_keys.key_blocks[k].data[idx].co.z = dz
+            obj.data.shape_keys.key_blocks[k].data[idx].co.z = dz
 
 e = time.time()
 print("done %.2f s" % (e - s))
