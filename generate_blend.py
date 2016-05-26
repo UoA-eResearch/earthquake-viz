@@ -36,9 +36,9 @@ f = open(dem_file)
 lines = f.readlines()
 
 basemap_scale = 0.00002
-disp_scale = 0.025
-vert_skip = 3
-ts_skip = 2
+disp_scale = 0.0125
+vert_skip = 1
+ts_skip = 3
 
 first = [float(x) for x in lines[0].split()]
 minlng = first[0]
@@ -185,13 +185,14 @@ for k,d in enumerate(simulation):
         for j in range(0, n_lat):
             idx = j * n_lon + i
             dz = d[idx]
-            obj.data.shape_keys.key_blocks[k].data[idx].co.z = dz
             if display_type == 'cumulative' and k > 1:
               prev = simulation[k-2][idx]
               if dz > prev:
                 obj.data.shape_keys.key_blocks[k].data[idx].co.z = dz
               else:
                 obj.data.shape_keys.key_blocks[k].data[idx].co.z = prev
+            else:
+              obj.data.shape_keys.key_blocks[k].data[idx].co.z = dz
 
 e = time.time()
 print("done %.2f s" % (e - s))
