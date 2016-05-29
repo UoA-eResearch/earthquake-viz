@@ -181,7 +181,8 @@ obj.data.shape_keys.key_blocks[0].name = "Basis"
 
 for k,d in enumerate(simulation):
     obj.shape_key_add()
-    obj.data.shape_keys.key_blocks[k].name = "Key_{}".format(k+1)
+    k += 1
+    obj.data.shape_keys.key_blocks[k].name = "Key_{}".format(k)
     for i in range(0, n_lon):
         for j in range(0, n_lat):
             idx = j * n_lon + i
