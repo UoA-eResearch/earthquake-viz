@@ -95,26 +95,30 @@ print("Longitude range: {} to {}. Latitude range: {} to {}. Longitude steps: {}.
 
 files = glob.glob(data_dir)
 files.sort()
-files = files[::ts_skip]
 simulation = []
 
 print('reading tslices')
 s = time.time()
 sys.stdout.flush()
 
-for f in files:
-  c = readBinary(f)
+for i in range(0, len(files), 3 * ts_skip):
+#for i in range(1500, 1509, 3):
+  east = readBinary(files[i])
+  north = readBinary(files[i+1])
+  down = readBinary(files[i+2])
   matrix = np.zeros((n_lon, n_lat))
-  for lng, lat, elev in c:
+  for index, (lng, lat, e) in enumerate(east):
     lng = round(lng, 2)
     lat = round(lat, 2)
     if lng not in lng_lookup or lat not in lat_lookup:
       continue
     if lng in dem and lat in dem[lng] and dem[lng][lat] < 0:
-      elev = 0
+      continue
+    if lng not in dem or (lng in dem and lat not in dem[lng]):
+      continue
     i = lng_lookup[lng]
     j = lat_lookup[lat]
-    matrix[i][j] = disp_scale * elev
+    matrix[i][j] = disp_scale * np.sqrt(e**2 + north[index][2] ** 2 + down[index][2] ** 2)
   matrix = gaussian_filter(matrix, sigma=2)
   matrix += smoothed_dem
   matrix = list(matrix.flatten())

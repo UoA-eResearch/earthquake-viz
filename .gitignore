@@ -66,9 +66,11 @@ input
 *.jpg
 *.txt
 *.0
+*.1
+*.2
 
 # Outputs
-*.blend
+*.blend*
 *.mp4
 
 # Archives
