@@ -103,6 +103,8 @@ sys.stdout.flush()
 
 for i in range(0, len(files), 3 * ts_skip):
 #for i in range(1500, 1509, 3):
+  if i % 90 == 0:
+    print("{}s: {}/{} done".format(round(time.time() - s, 2), i, len(files)))
   east = readBinary(files[i])
   north = readBinary(files[i+1])
   down = readBinary(files[i+2])
@@ -184,6 +186,8 @@ obj.data.shape_keys.key_blocks[0].name = "Basis"
 # displacement scale
 
 for k,d in enumerate(simulation):
+    if k % 100 == 0:
+        print("{}s: {}/{} done".format(round(time.time() - s, 2), k, len(simulation)))
     obj.shape_key_add()
     k += 1
     obj.data.shape_keys.key_blocks[k].name = "Key_{}".format(k)
