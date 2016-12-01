@@ -23,14 +23,15 @@ def readBinary(fname):
 argv = sys.argv
 argv = argv[argv.index("--") + 1:]  # get all args after "--"
 
-if len(argv) < 4:
-  print('specify tslice, dem, texture, display type')
+if len(argv) < 5:
+  print('specify tslice, dem, texture, display type, corners')
   exit(1)
 
 data_dir = argv[0].strip('/') + '/*'
 dem_file = argv[1]
 texture_path = argv[2]
 display_type = argv[3]
+corners = argv[4]
 
 f = open(dem_file)
 lines = f.readlines()
@@ -41,10 +42,6 @@ vert_skip = 1
 ts_skip = 3
 
 first = [float(x) for x in lines[0].split()]
-minlng = first[0]
-maxlng = first[0]
-minlat = first[1]
-maxlat = first[1]
 
 print('reading DEM')
 
@@ -58,18 +55,15 @@ for line in lines:
   if bits[1] not in lats:
     lats.append(bits[1])
   dem[bits[0]][bits[1]] = bits[2] * basemap_scale
-  if bits[0] < minlng:
-    minlng = bits[0]
-  if bits[0] > maxlng:
-    maxlng = bits[0]
-  if bits[1] < minlat:
-    minlat = bits[1]
-  if bits[1] > maxlat:
-    maxlat = bits[1]
 
 lngs = list(dem.keys())
 lngs.sort()
 lats.sort()
+
+minlng = min(lngs)
+maxlng = max(lngs)
+minlat = min(lats)
+maxlat = max(lats)
 
 lngs = lngs[::vert_skip]
 lats = lats[::vert_skip]
@@ -93,6 +87,14 @@ smoothed_dem = gaussian_filter(smoothed_dem, sigma=2)
 
 print("Longitude range: {} to {}. Latitude range: {} to {}. Longitude steps: {}. Latitude steps: {}.".format(minlng, maxlng, minlat, maxlat, n_lon, n_lat))
 
+fault = []
+
+with open(corners) as f:
+    for line in f:
+        if not line.startswith('>'):
+            bits = line.split()
+            fault.append([float(bits[0]), float(bits[1])])
+
 files = glob.glob(data_dir)
 files.sort()
 simulation = []
@@ -114,10 +116,10 @@ for i in range(0, len(files), 3 * ts_skip):
     lat = round(lat, 2)
     if lng not in lng_lookup or lat not in lat_lookup:
       continue
-    if lng in dem and lat in dem[lng] and dem[lng][lat] < 0:
-      continue
-    if lng not in dem or (lng in dem and lat not in dem[lng]):
-      continue
+    #if lng in dem and lat in dem[lng] and dem[lng][lat] < 0:
+    #  continue
+    #if lng not in dem or (lng in dem and lat not in dem[lng]):
+    #  continue
     i = lng_lookup[lng]
     j = lat_lookup[lat]
     matrix[i][j] = disp_scale * np.sqrt(e**2 + north[index][2] ** 2 + down[index][2] ** 2)
@@ -169,8 +171,30 @@ mesh_data.update()  # (calc_edges=True) not needed here
 
 dem_object = bpy.data.objects.new("DEM_Object", mesh_data)
 
+verts = []
+faces = []
+# Create vertices
+for pair in fault[1:]:
+    normalised_x = (pair[0] - minlng) / 10
+    normalised_y = (pair[1] - minlat) / 10
+    vert = (normalised_x, normalised_y, .1)
+    verts.append(vert)
+
+for i in range(0, len(verts), 5):
+    face = (i, i+1, i+2, i+3, i+4)
+    faces.append(face)
+
+print('verts: {}. faces: {}. highest face: {}'.format(len(verts), len(faces), face))
+
+mesh_data = bpy.data.meshes.new("faults")
+mesh_data.from_pydata(verts, [], faces)
+mesh_data.update()  # (calc_edges=True) not needed here
+
+faults_object = bpy.data.objects.new("Faults_Object", mesh_data)
+
 scene = bpy.context.scene
 scene.objects.link(dem_object)
+scene.objects.link(faults_object)
 
 # animation
 
