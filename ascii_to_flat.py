@@ -38,4 +38,5 @@ for filename in inputs:
 with open('out.txt', 'w') as out:
   for lng in matrix:
     for lat in matrix[lng]:
+      elev = matrix[lng][lat]
       out.write("{}\t{}\t{}\n".format(lng, lat, elev))
