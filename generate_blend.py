@@ -38,7 +38,7 @@ lines = f.readlines()
 
 basemap_scale = 0.00002
 disp_scale = 0.0125
-vert_skip = 1
+vert_skip = 2
 ts_skip = 3
 
 first = [float(x) for x in lines[0].split()]
