@@ -103,6 +103,8 @@ print('reading tslices')
 s = time.time()
 sys.stdout.flush()
 
+bounds = [(360, 0), (-360, 0), (0, 360), (0, -360)]
+
 for i in range(0, len(files), 3 * ts_skip):
 #for i in range(1500, 1509, 3):
   if i % 90 == 0:
@@ -122,6 +124,14 @@ for i in range(0, len(files), 3 * ts_skip):
     #  continue
     i = lng_lookup[lng]
     j = lat_lookup[lat]
+    if lng < bounds[0][0]:
+      bounds[0] = (lng, lat)
+    if lat < bounds[1][1]:
+      bounds[1] = (lng, lat)
+    if lng > bounds[2][0]:
+      bounds[2] = (lng, lat)
+    if lat > bounds[3][1]:
+      bounds[3] = (lng, lat)
     matrix[i][j] = disp_scale * np.sqrt(e**2 + north[index][2] ** 2 + down[index][2] ** 2)
   matrix = gaussian_filter(matrix, sigma=2)
   matrix += smoothed_dem
@@ -192,9 +202,30 @@ mesh_data.update()  # (calc_edges=True) not needed here
 
 faults_object = bpy.data.objects.new("Faults_Object", mesh_data)
 
+verts = []
+faces = []
+# Create vertices
+print(bounds)
+for pair in bounds:
+    normalised_x = (pair[0] - minlng) / 10
+    normalised_y = (pair[1] - minlat) / 10
+    vert = (normalised_x, normalised_y, .1)
+    verts.append(vert)
+
+faces = [(0,1,2,3)]
+
+print('verts: {}. faces: {}. highest face: {}'.format(len(verts), len(faces), face))
+
+mesh_data = bpy.data.meshes.new("bounds")
+mesh_data.from_pydata(verts, [], faces)
+mesh_data.update()  # (calc_edges=True) not needed here
+
+bounds_object = bpy.data.objects.new("Bounds_Object", mesh_data)
+
 scene = bpy.context.scene
 scene.objects.link(dem_object)
 scene.objects.link(faults_object)
+scene.objects.link(bounds_object)
 
 # animation
 
