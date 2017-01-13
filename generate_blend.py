@@ -180,8 +180,8 @@ for pair in fault[1:]:
     vert = (normalised_x, normalised_y, .1)
     verts.append(vert)
 
-for i in range(0, len(verts), 5):
-    face = (i, i+1, i+2, i+3, i+4)
+for i in range(0, len(verts), 4):
+    face = (i, i+1, i+2, i+3)
     faces.append(face)
 
 print('verts: {}. faces: {}. highest face: {}'.format(len(verts), len(faces), face))
