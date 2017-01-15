@@ -105,15 +105,17 @@ sys.stdout.flush()
 
 bounds = [(360, 0), (-360, 0), (0, 360), (0, -360)]
 
-for i in range(0, len(files), 3 * ts_skip):
+for i in range(0, len(files), ts_skip):
 #for i in range(1500, 1509, 3):
   if i % 90 == 0:
     print("{}s: {}/{} done".format(round(time.time() - s, 2), i, len(files)))
-  east = readBinary(files[i])
-  north = readBinary(files[i+1])
-  down = readBinary(files[i+2])
+  c = readBinary(files[i])
+  #east = readBinary(files[i])
+  #north = readBinary(files[i+1])
+  #down = readBinary(files[i+2])
   matrix = np.zeros((n_lon, n_lat))
-  for index, (lng, lat, e) in enumerate(east):
+  #for index, (lng, lat, e) in enumerate(east):
+  for lng, lat, e in c:
     lng = round(lng, 2)
     lat = round(lat, 2)
     if lng not in lng_lookup or lat not in lat_lookup:
@@ -132,7 +134,8 @@ for i in range(0, len(files), 3 * ts_skip):
       bounds[2] = (lng, lat)
     if lat > bounds[3][1]:
       bounds[3] = (lng, lat)
-    matrix[i][j] = disp_scale * np.sqrt(e**2 + north[index][2] ** 2 + down[index][2] ** 2)
+    matrix[i][j] = disp_scale * e
+    #matrix[i][j] = disp_scale * np.sqrt(e**2 + north[index][2] ** 2 + down[index][2] ** 2)
   matrix = gaussian_filter(matrix, sigma=2)
   matrix += smoothed_dem
   matrix = list(matrix.flatten())
