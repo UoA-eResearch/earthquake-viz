@@ -27,8 +27,8 @@ for filename in inputs:
       dy = stats['cellsize']
     for row in range(stats['nrows']):
       for col in range(stats['ncols']):
-        lng = round((stats['xllcorner'] + dx * row), 2)
-        lat = round((stats['yllcorner'] + dy * col), 2)
+        lng = round((stats['xllcorner'] + dx * col), 2)
+        lat = round((stats['yllcorner'] + dy * (stats['nrows'] - row)), 2)
         if lng not in matrix:
           matrix[lng] = {}
         matrix[lng][lat] = bits[col]

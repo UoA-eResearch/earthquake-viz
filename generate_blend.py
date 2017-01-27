@@ -38,7 +38,7 @@ lines = f.readlines()
 
 basemap_scale = 0.00002
 disp_scale = 0.0125
-vert_skip = 1
+vert_skip = 2
 ts_skip = 3
 
 first = [float(x) for x in lines[0].split()]
@@ -103,15 +103,19 @@ print('reading tslices')
 s = time.time()
 sys.stdout.flush()
 
-for i in range(0, len(files), 3 * ts_skip):
+bounds = [(360, 0), (-360, 0), (0, 360), (0, -360)]
+
+for i in range(0, len(files), ts_skip):
 #for i in range(1500, 1509, 3):
   if i % 90 == 0:
     print("{}s: {}/{} done".format(round(time.time() - s, 2), i, len(files)))
-  east = readBinary(files[i])
-  north = readBinary(files[i+1])
-  down = readBinary(files[i+2])
+  c = readBinary(files[i])
+  #east = readBinary(files[i])
+  #north = readBinary(files[i+1])
+  #down = readBinary(files[i+2])
   matrix = np.zeros((n_lon, n_lat))
-  for index, (lng, lat, e) in enumerate(east):
+  #for index, (lng, lat, e) in enumerate(east):
+  for lng, lat, e in c:
     lng = round(lng, 2)
     lat = round(lat, 2)
     if lng not in lng_lookup or lat not in lat_lookup:
@@ -122,7 +126,16 @@ for i in range(0, len(files), 3 * ts_skip):
     #  continue
     i = lng_lookup[lng]
     j = lat_lookup[lat]
-    matrix[i][j] = disp_scale * np.sqrt(e**2 + north[index][2] ** 2 + down[index][2] ** 2)
+    if lng < bounds[0][0]:
+      bounds[0] = (lng, lat)
+    if lat < bounds[1][1]:
+      bounds[1] = (lng, lat)
+    if lng > bounds[2][0]:
+      bounds[2] = (lng, lat)
+    if lat > bounds[3][1]:
+      bounds[3] = (lng, lat)
+    matrix[i][j] = disp_scale * e
+    #matrix[i][j] = disp_scale * np.sqrt(e**2 + north[index][2] ** 2 + down[index][2] ** 2)
   matrix = gaussian_filter(matrix, sigma=2)
   matrix += smoothed_dem
   matrix = list(matrix.flatten())
@@ -180,8 +193,8 @@ for pair in fault[1:]:
     vert = (normalised_x, normalised_y, .1)
     verts.append(vert)
 
-for i in range(0, len(verts), 5):
-    face = (i, i+1, i+2, i+3, i+4)
+for i in range(0, len(verts), 4):
+    face = (i, i+1, i+2, i+3)
     faces.append(face)
 
 print('verts: {}. faces: {}. highest face: {}'.format(len(verts), len(faces), face))
@@ -192,9 +205,30 @@ mesh_data.update()  # (calc_edges=True) not needed here
 
 faults_object = bpy.data.objects.new("Faults_Object", mesh_data)
 
+verts = []
+faces = []
+# Create vertices
+print(bounds)
+for pair in bounds:
+    normalised_x = (pair[0] - minlng) / 10
+    normalised_y = (pair[1] - minlat) / 10
+    vert = (normalised_x, normalised_y, .1)
+    verts.append(vert)
+
+faces = [(0,1,2,3)]
+
+print('verts: {}. faces: {}. highest face: {}'.format(len(verts), len(faces), face))
+
+mesh_data = bpy.data.meshes.new("bounds")
+mesh_data.from_pydata(verts, [], faces)
+mesh_data.update()  # (calc_edges=True) not needed here
+
+bounds_object = bpy.data.objects.new("Bounds_Object", mesh_data)
+
 scene = bpy.context.scene
 scene.objects.link(dem_object)
 scene.objects.link(faults_object)
+scene.objects.link(bounds_object)
 
 # animation
 
